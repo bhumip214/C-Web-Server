@@ -97,12 +97,16 @@ void get_d20(int fd)
     ///////////////////
     // IMPLEMENT ME! //
     ///////////////////
+    int random_num = rand() % 20 + 1;
+    char response_num[1024];
+    int resp_len = sprintf(response_num, "%d\n", random_num);
 
     // Use send_response() to send it back as text/plain data
 
     ///////////////////
     // IMPLEMENT ME! //
     ///////////////////
+    send_response(fd, "HTTP/1.1 200 OK", "text/plain", response_num, resp_len);
 }
 
 /**
@@ -153,6 +157,8 @@ char *find_start_of_body(char *header)
     ///////////////////
     // IMPLEMENT ME! // (Stretch)
     ///////////////////
+    (void)header;
+    return NULL;
 }
 
 /**
@@ -179,7 +185,7 @@ void handle_http_request(int fd, struct cache *cache)
     // Read the first two components of the first line of the request
     char method[200];
     char path[8192];
-    sscanf("request, %s %s", method, path);
+    sscanf(request, "%s %s", method, path);
     printf("method: %s\n", method);
     printf("path: %s\n", path);
 
@@ -213,6 +219,9 @@ int main(void)
     int newfd;                          // listen on sock_fd, new connection on newfd
     struct sockaddr_storage their_addr; // connector's address information
     char s[INET6_ADDRSTRLEN];
+
+    // Set seed for rand()
+    srand(time(0));
 
     struct cache *cache = cache_create(10, 0);
 
