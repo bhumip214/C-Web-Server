@@ -33,7 +33,6 @@ void free_entry(struct cache_entry *entry)
     free(entry->path);
     free(entry->content_type);
     free(entry->content);
-    free(entry->content_length);
     free(entry);
 }
 
@@ -112,6 +111,15 @@ struct cache *cache_create(int max_size, int hashsize)
     ///////////////////
     // IMPLEMENT ME! //
     ///////////////////
+    struct cache *new_cache = malloc(sizeof(struct cache));
+
+    new_cache->index = hashtable_create(hashsize, NULL);
+    new_cache->head = NULL;
+    new_cache->tail = NULL;
+    new_cache->max_size = max_size;
+    new_cache->cur_size = 0;
+
+    return new_cache;
 }
 
 void cache_free(struct cache *cache)
@@ -184,4 +192,20 @@ struct cache_entry *cache_get(struct cache *cache, char *path)
     ///////////////////
     // IMPLEMENT ME! //
     ///////////////////
+
+    // Attempt to find the cache entry pointer by path in the hash table.
+    void *entry = hashtable_get(cache->index, path);
+
+    // If not found, return NULL.
+    if (entry == NULL)
+    {
+        return NULL;
+    }
+    else
+    {
+        // Move the cache entry to the head of the doubly-linked list.
+        dllist_move_to_head(cache, entry);
+        // Return the cache entry pointer.
+        return cache->head;
+    }
 }
