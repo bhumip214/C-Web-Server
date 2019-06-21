@@ -145,25 +145,40 @@ void get_file(int fd, struct cache *cache, char *request_path)
     ///////////////////
     // IMPLEMENT ME! //
     ///////////////////
-    char filepath[4096];
-    struct file_data *filedata;
-    char *mime_type;
 
-    // Fetch the file
-    snprintf(filepath, sizeof filepath, "%s/%s", SERVER_ROOT, request_path);
-    filedata = file_load(filepath);
+    // check to see if the path to the file is in the cache (use the file path as the key)
+    struct cache_entry *ce = cache_get(cache, request_path);
 
-    if (filedata == NULL)
+    //If it's there, serve it back.
+    if (ce != NULL)
     {
-        resp_404(fd);
-        return;
+        send_response(fd, "HTTP/1.1 200 OK", ce->content_type, ce->content, ce->content_length);
     }
+    else
+    {
+        char filepath[4096];
+        struct file_data *filedata;
+        char *mime_type;
 
-    mime_type = mime_type_get(filepath);
+        // Load or fetch the file from disk
+        snprintf(filepath, sizeof filepath, "%s/%s", SERVER_ROOT, request_path);
+        filedata = file_load(filepath);
 
-    send_response(fd, "HTTP/1.1 200 OK", mime_type, filedata->data, filedata->size);
+        if (filedata == NULL)
+        {
+            resp_404(fd);
+            return;
+        }
 
-    file_free(filedata);
+        mime_type = mime_type_get(filepath);
+
+        // Store it in the cache
+        cache_put(cache, request_path, mime_type, filedata->data, filedata->size);
+        // Serve it
+        send_response(fd, "HTTP/1.1 200 OK", mime_type, filedata->data, filedata->size);
+
+        file_free(filedata);
+    }
 }
 
 /**
